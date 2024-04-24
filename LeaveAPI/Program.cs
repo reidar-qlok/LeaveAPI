@@ -42,14 +42,50 @@ namespace LeaveAPI
                 return Results.Ok(employees);
             });
 
-            // Create a employee
+            // Create a new employee
             app.MapPost("/employees", async (Employee employee, ApplicationDbContext context) =>
             {
                 context.Employees.Add(employee);
                 await context.SaveChangesAsync();
                 return Results.Created($"/employees/{employee.EmployeeId}", employee);
             });
+            // Get an employee by id
+            app.MapGet("/employees/{id:int}", async (int id, ApplicationDbContext context) =>
+            {
+                var employee = await context.Employees.FindAsync(id);
+                if (employee == null)
+                {
+                    return Results.NotFound("Employee not found");
+                }
+                return Results.Ok(employee);
+            });
+            // Edit an employee
+            app.MapPut("/employees/{id:int}", async (int id, Employee updatedEmployee, ApplicationDbContext context) =>
+            {
+                var employee = await context.Employees.FindAsync(id);
 
+                if (employee == null)
+                {
+                    return Results.NotFound("Employee not found");
+                }
+                employee.EmployeeName = updatedEmployee.EmployeeName;
+                employee.Email = updatedEmployee.Email;
+                await context.SaveChangesAsync();
+                return Results.Ok(employee);
+            });
+            // Delete Employees
+            app.MapDelete("/employees/{id:int}", async (int id, ApplicationDbContext context) =>
+            {
+                var employee = await context.Employees.FindAsync(id);
+
+                if (employee == null)
+                {
+                    return Results.NotFound("Employee not found");
+                }
+                context.Employees.Remove(employee);
+                await context.SaveChangesAsync();
+                return Results.Ok($"Employee with ID: {id} deleted");
+            });
 
             app.Run();
         }
