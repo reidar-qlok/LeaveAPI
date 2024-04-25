@@ -86,7 +86,68 @@ namespace LeaveAPI
                 await context.SaveChangesAsync();
                 return Results.Ok($"Employee with ID: {id} deleted");
             });
+            //////////////////////////////////////////////
+            ///                Leaves           //////////
+            ///                                 //////////
+            ///                                 
+            // Return all leaves
+            app.MapGet("/leaves", async (ApplicationDbContext context) =>
+            {
+                var leaves = await context.Leaves.Include(e => e.Employee).ToListAsync();
+                if (leaves == null || !leaves.Any())
+                {
+                    return Results.NotFound("Hittade inga leaves");
+                }
+                return Results.Ok(leaves);
+            });
 
+            // Create a new leave
+            app.MapPost("/leaves", async (Leave leave, ApplicationDbContext context) =>
+            {
+                context.Leaves.Add(leave);
+                await context.SaveChangesAsync();
+                return Results.Created($"/leaves/{leave.LeaveId}", leave);
+            });
+            // Get an leave by id
+            app.MapGet("/leaves/{id:int}", async (int id, ApplicationDbContext context) =>
+            {
+                var leave = await context.Leaves.FindAsync(id);
+                if (leave == null)
+                {
+                    return Results.NotFound("Leave not found");
+                }
+                return Results.Ok(leave);
+            });
+            // Uppdatera a leave
+            app.MapPut("/leaves/{id:int}", async (int id, Leave updatedLeave, ApplicationDbContext context) =>
+            {
+                var leave = await context.Leaves.FindAsync(id);
+
+                if (leave == null)
+                {
+                    return Results.NotFound("Leave not found");
+                }
+                leave.StartDate = updatedLeave.StartDate;
+                leave.EndDate = updatedLeave.EndDate;
+                leave.Type = updatedLeave.Type;
+                leave.Status = updatedLeave.Status;
+                leave.FkEmployeeId = updatedLeave.FkEmployeeId;
+                await context.SaveChangesAsync();
+                return Results.Ok(leave);
+            });
+            // Delete Leave
+            app.MapDelete("/leaves/{id:int}", async (int id, ApplicationDbContext context) =>
+            {
+                var leave = await context.Leaves.FindAsync(id);
+
+                if (leave == null)
+                {
+                    return Results.NotFound("Leave not found");
+                }
+                context.Leaves.Remove(leave);
+                await context.SaveChangesAsync();
+                return Results.Ok($"Leave with ID: {id} deleted");
+            });
             app.Run();
         }
     }
